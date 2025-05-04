@@ -45,11 +45,8 @@ def main():
         counter_Moves.append(count)
     
     common = max(counter_Moves)
-    if common == 1:
-        print(moves[0])
-    else: 
-        index = counter_Moves.index(common)
-        print(moves[index])
+    index = counter_Moves.index(common)
+    print(moves[index])
 
 
 
