@@ -2,17 +2,21 @@
 # rc-bot-match Part4\baseline_bot.py Part4\trout_bot.py
 
 
-from reconchess import Player
-import chess.engine
+import chess
 import random
+from reconchess import *
 
 class RandomSensing(Player):
     def __init__(self):
-        # Initialize anything you need (e.g., Stockfish path, board state)
-        pass
+        self.color = None
+        self.current_board = chess.Board()
+        self.possible_states = [self.current_board.copy()]
+        self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\govin\OneDrive\Desktop\WITS\Year 4 Semester 1\Subjects\1 - Artificial Intelligence\Reconnaissance Blind Chess\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
 
-    def handle_game_start(self, color, board, opponent_name):
-        pass
+    def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
+        self.color = color
+        self.current_board = board.copy()
+        self.possible_states = [self.current_board.copy()]
 
     def handle_opponent_move_result(self, captured_my_piece, capture_square):
         pass
