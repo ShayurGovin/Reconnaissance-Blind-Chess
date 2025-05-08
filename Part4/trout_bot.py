@@ -18,8 +18,8 @@ class TroutBot(Player):
         self.color = None
         self.my_piece_captured_square = None
 
-        self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\govin\OneDrive\Desktop\WITS\Year 4 Semester 1\Subjects\1 - Artificial Intelligence\Reconnaissance Blind Chess\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
-
+        #self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\govin\OneDrive\Desktop\WITS\Year 4 Semester 1\Subjects\1 - Artificial Intelligence\Reconnaissance Blind Chess\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
+        self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\Rohan\OneDrive\Documents\AI\Project\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.board = board
         self.color = color
@@ -69,7 +69,7 @@ class TroutBot(Player):
             result = self.engine.play(self.board, chess.engine.Limit(time=0.5))
             return result.move
         except chess.engine.EngineTerminatedError:
-            print('Stockfish Engine died')
+            print('Stockfish Engine died - trout')
         except chess.engine.EngineError:
             print('Stockfish Engine bad state at "{}"'.format(self.board.fen()))
 
