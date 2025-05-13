@@ -5,11 +5,12 @@ import os
 from reconchess.utilities import without_opponent_pieces, is_illegal_castle
 from collections import Counter
 import chess
+import math
 
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
 
 
-class MyAgent(Player):
+class ImprovedAgent(Player):
 
     def __init__(self):
         super().__init__()
@@ -59,17 +60,80 @@ class MyAgent(Player):
         if new_states:
             self.possible_states = new_states
                         
-
-
-
     def choose_sense(self, sense_actions, move_actions, seconds_left):
-        valid_sense = []
+        N = len(self.possible_states)
+        # 1) If no beliefs, pick randomly
+        if N == 0:
+            return random.choice(sense_actions)
 
-        for sense in sense_actions:
-            if 1 <= chess.square_file(sense) <= 6 and 1 <= chess.square_rank(sense) <= 6:
-                valid_sense.append(sense) 
+        # 2) If you just lost a piece, sense where it was captured
+        if self.my_piece_captured_square is not None:
+            return self.my_piece_captured_square
 
-        return random.choice(valid_sense)
+        # 3) Sample if huge
+        if N > 1000:
+            sample = random.sample(self.possible_states, 1000)
+        else:
+            sample = self.possible_states
+                
+        N = len(sample)
+
+        # 4) Compute weighted entropy per square
+        VALUE = {'?':0.1,'P':1,'p':1,'N':3,'n':3,'B':3,'b':3,
+                'R':5,'r':5,'Q':9,'q':9,'K':100,'k':100}
+
+        entropy= {}
+        for square in range(64):  # for each square on the board
+            counts = Counter()
+            
+            # Count how many times each piece symbol appears at this square across all sampled boards
+            for state in sample:
+                piece = state.piece_at(square)
+                if piece is None:
+                    counts['?'] += 1
+                else:
+                    counts[piece.symbol()] += 1
+
+
+            H = 0.0
+            for symbol in counts:
+                count = counts[symbol]
+                probability = count / N  
+                H -= probability * math.log2(probability)
+        
+            max_piece_value = max(VALUE[sym] for sym in counts)
+            entropy[square] = H * max_piece_value
+
+        # 5) Compute opponent‐threat frequency per square
+        threat = Counter()
+        for state in sample:
+            if state.turn != self.color:
+                for move in state.pseudo_legal_moves:
+                    threat[move.to_square] += 1
+
+        # 6) Score each interior center by α·entropy + (1-α)·threat
+        alpha = 0.7
+        best = None
+        best_score = -1.0
+
+        for pos in sense_actions:
+            f, r = chess.square_file(pos), chess.square_rank(pos)
+            if not (1 <= f <= 6 and 1 <= r <= 6):
+                continue
+
+            score = 0.0
+            for df in (-1,0,1):
+                for dr in (-1,0,1):
+                    square = chess.square(f+df, r+dr)
+                    score += alpha * entropy.get(square,0) + (1-alpha) * threat.get(square,0)
+
+            if score > best_score:
+                best_score, best = score, pos
+        if best is not None:
+            return best
+        else:
+            return random.choice(sense_actions)
+
 
     def handle_sense_result(self, sense_result):
         # add the pieces in the sense result to our board
@@ -101,7 +165,6 @@ class MyAgent(Player):
             N = 10000
         if N <= 0:
             return random.choice(move_actions)
-
         moves = []
         time_per_state = 10.0 / N
         for state in self.possible_states:
@@ -165,7 +228,36 @@ class MyAgent(Player):
             new_state.push(taken_move)
             new_states.append(new_state)
         self.possible_states = new_states
+        # new_states = []
 
+        # for state in self.possible_states:
+        #     # 1) It must have been our turn in this hypothesis
+        #     if state.turn != self.color:
+        #         continue
+
+        #     # 2) The actual move must be pseudo‐legal there
+        #     if taken_move not in state.pseudo_legal_moves:
+        #         continue
+
+        #     # 3) The capture‐info must line up
+        #     did_cap = state.is_capture(taken_move)
+        #     if captured_opponent_piece:
+        #         if not did_cap or taken_move.to_square != capture_square:
+        #             continue
+        #     else:
+        #         if did_cap:
+        #             continue
+
+        #     # 4) It survives: push the actual move
+        #     next_state = state.copy(stack=False)
+        #     next_state.push(taken_move)
+        #     new_states.append(next_state)
+
+        #     # 5) Adopt the filtered list if any remain
+        #     if new_states:
+        #         # (optional: dedupe by FEN)
+        #         unique = {s.fen(): s for s in new_states}
+        #         self.possible_states = list(unique.values())
 
     def handle_game_end(self, winner_color, win_reason,game_history):
         try:
