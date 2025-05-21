@@ -19,8 +19,9 @@ class RandomSensing(Player):
         self.current_board = None
         self.possible_states = None
 
-        # self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\govin\OneDrive\Desktop\WITS\Year 4 Semester 1\Subjects\1 - Artificial Intelligence\Reconnaissance Blind Chess\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
-        self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\Rohan\OneDrive\Documents\AI\Project\Reconnaissance-Blind-Chess\stockfish\stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\govin\OneDrive\Desktop\WITS\Year 4 Semester 1\Subjects\1 - Artificial Intelligence\Reconnaissance Blind Chess\Reconnaissance-Blind-Chess\stockfish\stockfish.exe")
+        # self.engine = chess.engine.SimpleEngine.popen_uci('/opt/stockfish/stockfish', setpgrp=True)
+        # self.engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\Rohan\OneDrive\Documents\AI\Project\Reconnaissance-Blind-Chess\stockfish\stockfish")
    
     def handle_game_start(self, color, board, opponent_name):
         self.board = board
@@ -58,10 +59,8 @@ class RandomSensing(Player):
 
         if new_states:
             self.possible_states = new_states
-                        
 
-
-
+          
     def choose_sense(self, sense_actions, move_actions, seconds_left):
         valid_sense = []
 
@@ -71,10 +70,8 @@ class RandomSensing(Player):
 
         return random.choice(valid_sense)
 
+
     def handle_sense_result(self, sense_result):
-        # add the pieces in the sense result to our board
-        # for square, piece in sense_result:
-        #     self.board.set_piece_at(square, piece)
         valid_states = []
         for state in self.possible_states:
             count = 0
@@ -133,18 +130,6 @@ class RandomSensing(Player):
 
 
     def handle_move_result(self,requested_move: chess.Move,taken_move: chess.Move,captured_opponent_piece: bool,capture_square: int | None):
-
-        # new_Pos_states = []
-        # if requested_move != taken_move:
-        #     for state in self.possible_states:
-        #         if not state.is_legal(requested_move):
-        #             new_Pos_states.append(state)
-        # else:
-        #     for state in self.possible_states:
-        #         if state.is_legal(requested_move):
-        #             new_Pos_states.append(state)
-        # self.possible_states = new_Pos_states
-
         new_states = []
 
         for state in self.possible_states:
